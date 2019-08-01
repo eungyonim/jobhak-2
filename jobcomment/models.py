@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 Category_select = (
     ('상식', '상식'),
@@ -16,6 +17,12 @@ class Blog(models.Model):
     created_date = models.DateTimeField(default=timezone.now)
     pub_date = models.DateTimeField(blank=True, null=True)
 
+    like = models.ManyToManyField(User, related_name='like_post', blank=True)
+    favorite = models.ManyToManyField(User, related_name='favorite_post', blank=True)
+
+    def summary(self):
+        return self.body[:10]
+
     def publish(self):
         self.published_date = timezone.now()
         self.save()
@@ -26,7 +33,7 @@ class Blog(models.Model):
 
 class Comment(models.Model):
     post = models.ForeignKey('jobcomment.Blog', related_name='comments',on_delete=models.CASCADE)
-    author = models.CharField(max_length=200)
+    author = models.CharField(max_length=200, null=False, blank=False)
     text = models.TextField()
     created_date = models.DateTimeField(default=timezone.now)
     approved_comment = models.BooleanField(default=False)

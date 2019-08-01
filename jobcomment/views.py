@@ -6,6 +6,7 @@ from .form import NewBlog, CommentForm
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import auth
+from django.http import JsonResponse , HttpResponseRedirect
 
 def home(request):
     blogs = Blog.objects
@@ -16,6 +17,17 @@ def home(request):
     #request된 페이지를 얻어온 뒤 return 해 준다.
     posts = paginator.get_page(page)
     return render(request, 'index.html', {'blogs':blogs, 'posts':posts})
+
+# 홈페이지와는 다른 게시판 함수
+def post_home(request):
+    blogs = Blog.objects
+    blog_list = Blog.objects.all()
+    paginator = Paginator(blog_list, 8)
+    #request된 페이지가 뭔지를 알아내고 (request페이지를 변수에 담아내고)
+    page = request.GET.get('page')
+    #request된 페이지를 얻어온 뒤 return 해 준다.
+    posts = paginator.get_page(page)
+    return render(request, 'post.html', {'blogs':blogs, 'posts':posts})
 
 def new(request):
     return render(request, 'new.html')
@@ -41,10 +53,13 @@ def add_comment(request, pk):
     if request.method == "POST":
         form = CommentForm(request.POST)
         if form.is_valid():
+
+
             comment = form.save(commit=False)
+
             comment.post = blog
             comment.save()
-            return redirect('home')
+            return redirect('detail', blog_id)
     else:
         form = CommentForm()
     return render(request, 'add_comment.html', {'form': form})
@@ -124,15 +139,29 @@ def logout(request):
 
 def search(request):
     if request.GET.get('q'):
-            que = request.GET.get('q')
-            variable_column = request.GET.get('search_filter')
-            search_type = 'contains'
-            filter = variable_column + '__' + search_type
-            blogs = Blog.objects.filter(**{ filter: request.GET.get('q') }).order_by('-pub_date') 
+        que = request.GET.get('q')
+        variable_column = request.GET.get('search_filter')
+        search_type = 'contains'
+        filter = variable_column + '__' + search_type
+        posts = Blog.objects.filter(**{ filter: request.GET.get('q') }).order_by('-pub_date') 
+        return render(request , 'result.html' , {'result' : posts , 'query' : que})
     else:
-        return redirect('home')
-    
-    return render(request, 'result.html', {'blogs': blogs, 'que': que})
+        return redirect('home') 
 
-def result(request):
-    return render(request, 'result.html')
+def like(request,blog_id):
+    blog=get_object_or_404(Blog, pk = blog_id)
+    if blog.like.filter(username=request.user.username).exists():
+        blog.like.remove(request.user)    
+    else:
+        blog.like.add(request.user)
+    blog.save()
+    return redirect('/jobcomment/%d'%blog.pk)
+
+def favorite(request,blog_id):
+    blog=get_object_or_404(Blog, pk = blog_id)
+    if blog.favorite.filter(username=request.user.username).exists():
+        blog.favorite.remove(request.user)
+    else:
+        blog.favorite.add(request.user)
+    blog.save()
+    return redirect('detail', blog_id)

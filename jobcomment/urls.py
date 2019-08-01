@@ -14,4 +14,7 @@ urlpatterns =[
     path('login/', views.login, name="login"),
     path('logout/', views.logout, name="logout"),
     path('search', views.search, name="search"),
+    path('post_home/', views.post_home, name="post_home"),
+    path('like/<int:blog_id>', views.like, name="like"),
+    path('favorite/<int:blog_id>', views.favorite, name="favorite")
 ]
